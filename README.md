@@ -146,3 +146,7 @@ For more information:
 
 ## Terms of use
 _Project Name_ is licensed under the [MIT License](/LICENSE.md).
+
+---
+
+Developed as part of [The BDRC E-Text Corpus project](https://www.bdrc.io/blog/2026/02/28/bdrc-launches-major-initiative-to-build-open-buddhist-datasets-for-ai/).
