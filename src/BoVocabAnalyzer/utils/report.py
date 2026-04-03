@@ -33,8 +33,10 @@ def save_detail_tsv(
         output_path: Destination TSV path.
         model_info: Model metadata (included as a column).
     """
+    meta_fields = sorted(model_info.metadata.keys())
     fieldnames = [
         "model",
+        *meta_fields,
         "rank",
         "word",
         "is_valid",
@@ -50,10 +52,12 @@ def save_detail_tsv(
     with open(output_path, "w", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()
+        meta_row = {k: model_info.metadata[k] for k in meta_fields}
         for r in results:
             writer.writerow(
                 {
                     "model": model_info.name,
+                    **meta_row,
                     "rank": r.rank,
                     "word": r.word,
                     "is_valid": r.is_valid,
@@ -98,6 +102,8 @@ def save_summary_report(
         fh.write("  BOTOK VOCABULARY VALIDATION REPORT\n")
         fh.write(f"  Model : {model_info.name}\n")
         fh.write(f"  Source: {model_info.source}\n")
+        for key, value in model_info.metadata.items():
+            fh.write(f"  {key}: {value}\n")
         fh.write(f"  Generated: {datetime.now():%Y-%m-%d %H:%M:%S}\n")
         fh.write("=" * 70 + "\n\n")
 

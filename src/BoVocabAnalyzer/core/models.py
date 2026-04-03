@@ -12,11 +12,15 @@ class ModelInfo:
         name: Human-readable model name (e.g. repo id or file stem).
         arpa_path: Local path to the ARPA file (after download if remote).
         source: Original source string — a file path or HuggingFace repo id.
+        metadata: Key-value pairs parsed from the companion ``meta.txt``
+            file (e.g. Tokenizer, Normalisation).  Empty when no meta file
+            is found.
     """
 
     name: str
     arpa_path: Path
     source: str
+    metadata: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

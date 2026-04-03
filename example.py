@@ -9,17 +9,34 @@ from pathlib import Path
 from BoVocabAnalyzer import run_analysis
 
 # ---------------------------------------------------------------------------
-# Option 1: Analyse a local ARPA file
+# Option 1: Analyse local ARPA files (batch pipeline)
 # ---------------------------------------------------------------------------
-# Provide a pathlib.Path pointing to your .arpa language model.
-# The model name in the report will be derived from the file stem.
+# Scans a ``models/`` directory for all .arpa files, then runs the full
+# extraction + botok validation pipeline for each one.  Per-model outputs
+# are written to ``vocabs/`` and ``report/<model_name>/``.
 
-# results = run_analysis(
-#     arpa_source=Path("BoKenlm-botok-syl.arpa"),
-#     detail_path=Path("local_detail.tsv"),
-#     summary_path=Path("local_summary.txt"),
-#     vocab_path=Path("local_vocab.tsv"),
-# )
+MODELS_DIR = Path("./data/models")
+VOCABS_DIR = Path("./data/vocabs")
+REPORTS_DIR = Path("./data/reports")
+
+VOCABS_DIR.mkdir(parents=True, exist_ok=True)
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+arpa_files = sorted(MODELS_DIR.glob("*.arpa"))
+if not arpa_files:
+    raise FileNotFoundError(f"No .arpa files found in {MODELS_DIR}")
+
+for arpa_path in arpa_files:
+    model_name = arpa_path.stem
+    report_dir = REPORTS_DIR / model_name
+    report_dir.mkdir(parents=True, exist_ok=True)
+
+    results = run_analysis(
+        arpa_source=arpa_path,
+        detail_path=report_dir / "botok_detail.tsv",
+        summary_path=report_dir / "botok_summary.txt",
+        vocab_path=VOCABS_DIR / f"{model_name}_vocab.tsv",
+    )
 
 # ---------------------------------------------------------------------------
 # Option 2: Analyse from a Hugging Face repo
@@ -27,12 +44,12 @@ from BoVocabAnalyzer import run_analysis
 # Pass a repo id string (e.g. "org/repo-name").  The tool will auto-detect
 # the .arpa file in the repo, download it, and run the analysis.
 
-results = run_analysis(
-    arpa_source="openpecha/bo-kenlm-model",
-    detail_path=Path("hf_detail.tsv"),
-    summary_path=Path("hf_summary.txt"),
-    vocab_path=Path("hf_vocab.tsv"),
-)
+# results = run_analysis(
+#     arpa_source="openpecha/bo-kenlm-model",
+#     detail_path=Path("hf_detail.tsv"),
+#     summary_path=Path("hf_summary.txt"),
+#     vocab_path=Path("hf_vocab.tsv"),
+# )
 
 # ---------------------------------------------------------------------------
 # The returned `results` is a list[WordResult] you can inspect further:

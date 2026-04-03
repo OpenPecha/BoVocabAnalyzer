@@ -113,6 +113,48 @@ def analyse_word(wt: WordTokenizer, word: str, rank: int) -> WordResult:
 # ---------------------------------------------------------------------------
 
 
+def _parse_meta(meta_path: Path) -> dict[str, str]:
+    """Parse a ``meta.txt`` file into a key→value dict.
+
+    Each non-blank line is expected to look like ``Key: Value``.  Lines
+    without a colon are stored with the key ``"_line_N"``.
+
+    Args:
+        meta_path: Path to the meta.txt file.
+
+    Returns:
+        An ordered dict of the parsed key-value pairs.
+    """
+    metadata: dict[str, str] = {}
+    for idx, raw_line in enumerate(
+        meta_path.read_text(encoding="utf-8").splitlines(), 1
+    ):
+        line = raw_line.strip()
+        if not line:
+            continue
+        if ":" in line:
+            key, value = line.split(":", maxsplit=1)
+            metadata[key.strip()] = value.strip()
+        else:
+            metadata[f"_line_{idx}"] = line
+    return metadata
+
+
+def _find_meta_for_arpa(arpa_path: Path) -> dict[str, str]:
+    """Look for a companion ``<stem>-meta.txt`` next to *arpa_path*.
+
+    Args:
+        arpa_path: Local path to the ``.arpa`` file.
+
+    Returns:
+        Parsed metadata dict, or an empty dict when no meta file exists.
+    """
+    meta_path = arpa_path.with_name(f"{arpa_path.stem}-meta.txt")
+    if meta_path.is_file():
+        return _parse_meta(meta_path)
+    return {}
+
+
 def _resolve_source(arpa_source: Path | str) -> ModelInfo:
     """Resolve *arpa_source* into a :class:`ModelInfo`.
 
@@ -134,6 +176,7 @@ def _resolve_source(arpa_source: Path | str) -> ModelInfo:
             name=arpa_source.stem,
             arpa_path=arpa_source,
             source=str(arpa_source),
+            metadata=_find_meta_for_arpa(arpa_source),
         )
     # Treat as HuggingFace repo id
     return download_arpa_from_hf(arpa_source)
@@ -163,7 +206,10 @@ def run_analysis(
     # 1. Resolve source → ModelInfo
     model_info = _resolve_source(arpa_source)
     print(f"Model : {model_info.name}")
-    print(f"Source: {model_info.source}\n")
+    print(f"Source: {model_info.source}")
+    for key, value in model_info.metadata.items():
+        print(f"  {key}: {value}")
+    print()
 
     # 2. Extract vocabulary from ARPA
     print("Extracting vocabulary from ARPA file …")
